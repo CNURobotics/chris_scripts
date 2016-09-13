@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package>
+  <name>chris_scripts</name>
+  <version>0.0.0</version>
+  <description>The chris_scripts package</description>
+
+  <maintainer email="david.conner@cnu.edu">David Conner</maintainer>
+
+  <license>BSD</license>
+
+  <author email="david.conner@cnu.edu">David Conner</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+</package>
+
