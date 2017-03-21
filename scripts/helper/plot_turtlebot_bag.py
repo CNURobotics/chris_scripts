@@ -59,13 +59,19 @@ base_node='/'+robot_name+'/'
 odom_msgs                 = []
 odom_ground_truth_msgs    = [] # odom frame to world ground truth
 base_ground_truth_msgs    = [] # base frame to world ground truth
-cmd_vel_msgs           = []
+cmd_vel_msgs              = []
+pose_msgs                 = [] # Estimated pose messages
+
 time_odom = []
 x_odom = []
 y_odom = []
 z_odom = []
 vx_odom = []
 wz_odom = []
+time_pose = []
+x_pose=[]
+y_pose=[]
+
 theta_odom_time = []
 theta_odom = []
 time_gnd = []
@@ -92,6 +98,8 @@ for topic_info in info_dict['topics']:
                 odom_ground_truth_msgs = topic_info['messages']
         if (topic == base_node+'stamped_cmd_vel_mux/output/cmd_vel_stamped'):
             cmd_vel_msgs = topic_info['messages']
+        if (topic == base_node+'estimated_pose'):
+            pose_msgs = topic_info['messages']
 
 
 print topic_list
@@ -101,6 +109,7 @@ print "  odom msgs        ="+str(  odom_msgs 	)
 print "  odom_ground_truth msgs="+str(  odom_ground_truth_msgs 	)
 print "  base_ground_truth msgs="+str(  base_ground_truth_msgs 	)
 print "  cmd vel msgs      ="+str(  cmd_vel_msgs 	)
+print "  pose msgs      ="+str(  pose_msgs 	)
 
 print "Process messages ..."
 time_base = -1;
@@ -132,6 +141,7 @@ if (odom_msgs):
             pt = pt + 1
 
     end_time = min(end_time, max(time_odom))
+    print "Odom start time ="+str(min(time_odom))
     print "Set end time ="+str(end_time)
 
 
@@ -173,10 +183,30 @@ if (cmd_vel_msgs):
     pt = 0
     for topic, msg, t0 in bag.read_messages(topics=base_node+'stamped_cmd_vel_mux/output/cmd_vel_stamped'):
             time_cmd[pt] = (msg.header.stamp.to_sec() - time_base)
-            vx_cmd[pt]      = msg.twist.linear.x
-            wz_cmd[pt]      = msg.twist.angular.z
+            vx_cmd[pt]   = msg.twist.linear.x
+            wz_cmd[pt]   = msg.twist.angular.z
 
             pt = pt + 1
+
+    print "Cmd start time ="+str(min(time_cmd))
+    print "Cmd end time ="+str(max(time_cmd))
+
+if (pose_msgs):
+    time_pose = [0 for x in xrange(pose_msgs)]
+    x_pose    = [0 for x in xrange(pose_msgs)]
+    y_pose    = [0 for x in xrange(pose_msgs)]
+    # estimated pose data
+    pt = 0
+    for topic, msg, t0 in bag.read_messages(topics=base_node+'estimated_pose'):
+            time_pose[pt] = (msg.header.stamp.to_sec() - time_base)
+            x_pose[pt]    = msg.pose.pose.position.x
+            y_pose[pt]    = msg.pose.pose.position.y
+
+            pt = pt + 1
+
+    print "Pose start time ="+str(min(time_pose))
+    print "Pose end time ="+str(max(time_pose))
+
 
 print "Close bag!"
 bag.close()
@@ -209,24 +239,43 @@ if (base_ground_truth_msgs):
     ax_gnd.legend(['ground truth (simulation)'])
     fig_gnd.suptitle("Actual Displacement")
 
-if (odom_msgs and base_ground_truth_msgs):
-    print "  Plot odom frame in ground truth  ..."
+if (pose_msgs):
+    print "  Plot odometry  ..."
+    fig_pose = plt.figure()
+    ax_pose = fig_pose.add_subplot(111, aspect='equal')
+    ax_pose.plot(x_pose,y_pose,'g')
+    ax_pose.axis([min(x_pose)-0.2, max(x_pose)+0.2,
+                  min(y_pose)-0.2, max(y_pose)+0.2 ])
+    ax_odom.set_ylabel('x')
+    ax_odom.set_xlabel('y')
+    ax_odom.legend(['pose'])
+    fig_pose.suptitle("Mapping-based Localization")
+
+
+if (odom_msgs and (base_ground_truth_msgs or pose_msgs)):
+    print "  Plot odom frame with other estimates  ..."
     fig_gnd = plt.figure()
     ax_gnd = fig_gnd.add_subplot(111, aspect='equal')
     ax_gnd.hold(True)
     ax_gnd.plot(x_odom,y_odom,'g')
-    ax_gnd.plot(x_gnd,y_gnd,'b:')
 
-    print "min([min(x_gnd,min(x_odom))])=",min([min(x_gnd),min(x_odom)])
-    print "    +0.2=",min([min(x_gnd),min(x_odom)])+0.2
-    #print "max([max(x_gnd,max(x_odom))])=",max([max(x_gnd,max(x_odom))])
-    print "max(x_gnd,max(x_odom))])=",max([max(x_gnd),max(x_odom)])
-    print "max(x_gnd,max(x_odom))])=",max([max(x_gnd),max(x_odom)])
+    legend_text = ['odometry']
+    if (base_ground_truth_msgs):
+        ax_gnd.plot(x_gnd,y_gnd,'b:')
+        legend_text.append('ground truth (simulation)')
 
-    xmin0= min([min(x_gnd),min(x_odom)])-0.2
-    xmax0= max([max(x_gnd),max(x_odom)])+0.2
-    ymin0= min([min(y_gnd),min(y_odom)])-0.2
-    ymax0= max([max(y_gnd),max(y_odom)])+0.2
+    if (pose_msgs):
+        ax_gnd.plot(x_pose,y_pose,'r:')
+        legend_text.append('mapping')
+
+    print "min([min(x_gnd),min(x_odom),min(x_pose)])=",min([min(x_gnd),min(x_odom),min(x_pose)])
+    print "    +0.2=",min([min(x_gnd),min(x_odom),min(x_pose)])+0.2
+    print "max([max(x_gnd),max(x_odom),min(x_pose)])=",max([max(x_gnd),max(x_odom),min(x_pose)])
+
+    xmin0= min([min(x_gnd),min(x_odom),min(x_pose)])-0.2
+    xmax0= max([max(x_gnd),max(x_odom),max(x_pose)])+0.2
+    ymin0= min([min(y_gnd),min(y_odom),min(y_pose)])-0.2
+    ymax0= max([max(y_gnd),max(y_odom),max(y_pose)])+0.2
 
     print "[min([min(x_gnd,min(x_odom))])-0.2, max([max(x_gnd,max(x_odom))])+0.2,\
                  min([min(y_gnd,min(y_odom))])-0.2, max([max(y_gnd,max(y_odom))])+0.2]=",\
@@ -235,7 +284,7 @@ if (odom_msgs and base_ground_truth_msgs):
     ax_gnd.axis([xmin0, xmax0, ymin0, ymax0])
     ax_gnd.set_ylabel('x')
     ax_gnd.set_xlabel('y')
-    ax_gnd.legend(['odometry','ground truth (simulation)'])
+    ax_gnd.legend(legend_text)
     fig_gnd.suptitle("Displacement")
 
 if (odom_ground_truth_msgs):
@@ -260,6 +309,7 @@ if (cmd_vel_msgs):
     wzmin0= min([min(wz_cmd),  min(wz_odom) ] )-0.2
     wzmax0= max([max(wz_cmd),  max(wz_odom) ] )+0.2
 
+    print "  tmin=",str(tmin0),"  tmax=",str(tmax0)
 
     fig_cmd = plt.figure()
     ax_cmd = fig_cmd.add_subplot(211)
@@ -270,16 +320,16 @@ if (cmd_vel_msgs):
 
     ax_cmd.set_ylabel('m/s')
     ax_cmd.set_xlabel('time')
-    ax_cmd.legend(['vx_cmd (m/s)', 'vx_actual (m/s)'])
+    ax_cmd.legend(['vx_actual (m/s)', 'vx_cmd (m/s)'])
 
     ax_cmd = fig_cmd.add_subplot(212)
     ax_cmd.hold(True)
-    ax_cmd.plot(time_cmd,wz_cmd,'g')
-    ax_cmd.plot(time_odom,wz_odom,'r:')
+    ax_cmd.plot(time_odom,wz_odom,'r')
+    ax_cmd.plot(time_cmd,wz_cmd,'g*')
     ax_cmd.axis([tmin0, tmax0, wzmin0, wzmax0])
     ax_cmd.set_ylabel('rad/s')
     ax_cmd.set_xlabel('time')
-    ax_cmd.legend(['wz_cmd (rad/s)', 'wz_actual (rad/s)'])
+    ax_cmd.legend(['wz_actual (rad/s)', 'wz_cmd (rad/s)'])
     fig_cmd.suptitle("Commands")
 
 
