@@ -206,7 +206,8 @@ if (pose_msgs):
 
     print "Pose start time ="+str(min(time_pose))
     print "Pose end time ="+str(max(time_pose))
-
+else:
+    x_pose
 
 print "Close bag!"
 bag.close()
@@ -260,22 +261,26 @@ if (odom_msgs and (base_ground_truth_msgs or pose_msgs)):
     ax_gnd.plot(x_odom,y_odom,'g')
 
     legend_text = ['odometry']
+
+    xmin0= min(x_odom)-0.2
+    xmax0= max(x_odom)+0.2
+    ymin0= min(y_odom)-0.2
+    ymax0= max(y_odom)+0.2
     if (base_ground_truth_msgs):
         ax_gnd.plot(x_gnd,y_gnd,'b:')
         legend_text.append('ground truth (simulation)')
+        xmin0= min([min(x_gnd),xmin0])-0.2
+        xmax0= max([max(x_gnd),xmin0])+0.2
+        ymin0= min([min(y_gnd),ymin0])-0.2
+        ymax0= max([max(y_gnd),ymin0])+0.2
 
     if (pose_msgs):
         ax_gnd.plot(x_pose,y_pose,'r:')
         legend_text.append('mapping')
-
-    print "min([min(x_gnd),min(x_odom),min(x_pose)])=",min([min(x_gnd),min(x_odom),min(x_pose)])
-    print "    +0.2=",min([min(x_gnd),min(x_odom),min(x_pose)])+0.2
-    print "max([max(x_gnd),max(x_odom),min(x_pose)])=",max([max(x_gnd),max(x_odom),min(x_pose)])
-
-    xmin0= min([min(x_gnd),min(x_odom),min(x_pose)])-0.2
-    xmax0= max([max(x_gnd),max(x_odom),max(x_pose)])+0.2
-    ymin0= min([min(y_gnd),min(y_odom),min(y_pose)])-0.2
-    ymax0= max([max(y_gnd),max(y_odom),max(y_pose)])+0.2
+        xmin0= min([min(x_pose),xmin0])-0.2
+        xmax0= max([max(x_pose),xmin0])+0.2
+        ymin0= min([min(y_pose),ymin0])-0.2
+        ymax0= max([max(y_pose),ymin0])+0.2
 
     print "[min([min(x_gnd,min(x_odom))])-0.2, max([max(x_gnd,max(x_odom))])+0.2,\
                  min([min(y_gnd,min(y_odom))])-0.2, max([max(y_gnd,max(y_odom))])+0.2]=",\
