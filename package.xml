@@ -1,16 +1,17 @@
 <?xml version="1.0"?>
-<package>
+<package format="3">
   <name>chris_scripts</name>
-  <version>0.0.0</version>
+  <version>0.0.1</version>
   <description>The chris_scripts package</description>
 
-  <maintainer email="david.conner@cnu.edu">David Conner</maintainer>
+  <maintainer email="robotics@cnu.edu">David Conner</maintainer>
 
   <license>BSD</license>
 
-  <author email="david.conner@cnu.edu">David Conner</author>
+  <author email="robotics@cnu.edu">David Conner</author>
 
-  <buildtool_depend>catkin</buildtool_depend>
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
 
 </package>
-

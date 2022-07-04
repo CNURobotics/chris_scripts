@@ -144,15 +144,16 @@ if [ "$record" = true ]; then
 
    if [ "$file_path" = "" ]; then
      echo "use time stamped name ..."
-     full_path=screencast_$now.mkv
+     full_path="screencast_$now.mp4"
    else
      echo "use path and hostname ..."
-     full_path=$file_path"/"$HOSTNAME"_desktop.mkv"
+     full_path=$file_path"/"$HOSTNAME"_desktop.mp4"
    fi
 
    echo "Recording at $resolution with $x_off,$y_off offset"
    echo " to $full_path"
-   ffmpeg  $record_audio -s $resolution -f x11grab -i :0.0+$x_off,$y_off -vcodec libx264 -preset ultrafast -crf 0 -threads 0 $full_path
+   #ffmpeg  $record_audio -s $resolution -f x11grab -i $DISPLAY -vcodec libx264 -preset ultrafast -crf 0 -threads 0 $full_path
+   ffmpeg  $record_audio -s $resolution -f x11grab -i $DISPLAY  $full_path
    echo -e "${lightgreen}Recorded to screencast_$now.mkv${NC}"
 
    if [ "$loop_audio" = true ]; then

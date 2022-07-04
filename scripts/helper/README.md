@@ -1,1 +1,3 @@
-Helper scripts that are put into the system PATH during system install
+Common helper scripts
+
+For now, plot* and record desktop have not been updated for latest Ubuntu and ROS 2

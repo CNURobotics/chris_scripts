@@ -12,10 +12,12 @@ function findCanonicalBranch()
   dir=$1
   rosinstalldir=$2
 
+  #echo "Checking ${dir}  using ${rosinstalldir} ..."
+
   if [ -e "$rosinstalldir/.rosinstall" ]
   then
     name=$(basename $dir)
-    desiredBranch=$(perl -0 -ne 'print qq($1\n) if /\b'$name'\b.*\n.*version: ([^}]+)/mg' ${WORKSPACE_ROOT}/.rosinstall)
+    desiredBranch=$(perl -0 -ne 'print qq($1\n) if /\b'$name'\b.*\n.*version: ([^}]+)/mg' ${rosinstalldir}/.rosinstall)
   fi
 
   echo $desiredBranch
@@ -35,15 +37,19 @@ function displayStatus()
 
   if [ -e "$dir/.git" ]
   then
+    echo "----------------------------------------"
+    echo "$PWD :"
+    echo "$(git remote -v)"
+    #echo "   $(git status)"
     if [ "$(git rev-parse --abbrev-ref HEAD)" != "$desiredBranch" ] \
        || [ -n "$(git status --porcelain)" ] \
        || [ -n "$(git status | grep -P 'branch is (ahead|behind)')" ]
     then
-      echo "$PWD :"
       if [ "$(git rev-parse --abbrev-ref HEAD)" != "$desiredBranch" ]
       then
-        git status | grep "On branch" | perl -pe "chomp"
-        echo -e " (should be on branch $desiredBranch)"
+        #git status | grep "   On branch" | perl -pe "chomp"
+        echo -e "   $(git rev-parse --abbrev-ref HEAD)"
+        echo -e "      (should be on branch $desiredBranch)"
       fi
       git status | grep -P 'branch is (ahead|behind)'
       git status | grep "modified"
@@ -55,12 +61,14 @@ function displayStatus()
         | xargs -I file echo -e '\tuntracked:  '"file"
       fi
       echo
+    else
+      echo "    On branch $desiredBranch - No changes!"
+      echo ""
     fi
   elif [ -e "$dir/.hg" ]; then
     if [ "$(hg branch)" != "$desiredBranch" ] \
        || [ -n "$(hg status)" ]
     then
-      echo "$PWD :"
       echo "On hg branch `hg branch`"
       hg status
       hg incoming | grep "changes"
@@ -73,24 +81,18 @@ function displayStatus()
   cd $old_d
 }
 
-cd ${WORKSPACE_ROOT}
-blueEcho "Looking for changes in $PWD ..."
-displayStatus $PWD
-
-
-catkin_src=${ROS_WORKSPACE}
-blueEcho "Looking for changes in ${catkin_src} ..."
-for d in `find  ${catkin_src} -mindepth 1 -maxdepth 3 -type d`;
-do
-  branch=$(findCanonicalBranch $d ${catkin_src}/..)
-  displayStatus $d $branch
-done
-
-
-if [ -d $WORKSPACE_ROOT/rosinstall/optional/custom/.git ]; then
-
-    cd $WORKSPACE_ROOT/rosinstall/optional/custom
-    blueEcho "Looking for changes in $PWD ..."
-    displayStatus $PWD
+if [ -z $WORKSPACE_ROOT ]; then
+  echo "Variable WORKSPACE_ROOT not set, make sure the workspace is set up properly!"
+  exit 1
 fi
 
+ros2_src=$WORKSPACE_ROOT/src
+cd $ros2_src
+displayStatus $PWD
+
+blueEcho "Looking for changes in ${ros2_src} ..."
+for d in `find  ${ros2_src} -mindepth 1 -maxdepth 3 -type d`;
+do
+  branch=$(findCanonicalBranch $d ${ros2_src}/..)
+  displayStatus $d $branch
+done
