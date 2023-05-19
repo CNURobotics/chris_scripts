@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.0)
 project(chris_scripts)
 
 find_package(catkin REQUIRED)
@@ -26,4 +26,5 @@ catkin_add_env_hooks(10.workspace_setup_scripts SHELLS sh)
 
 install(DIRECTORY scripts/
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/scripts
+  USE_SOURCE_PERMISSIONS
 )
